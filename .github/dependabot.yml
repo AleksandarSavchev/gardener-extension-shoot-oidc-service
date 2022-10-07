@@ -5,6 +5,7 @@ updates:
     schedule:
       interval: daily
     open-pull-requests-limit: 5
+    target-branch: "testing"
     rebase-strategy: "disabled"
     allow:
       - dependency-type: "all"
