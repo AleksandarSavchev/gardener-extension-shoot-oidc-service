@@ -6,7 +6,6 @@ updates:
       interval: daily
     open-pull-requests-limit: 5
     rebase-strategy: "disabled"
-    vendor: true
     allow:
       - dependency-name: "github.com/gardener/gardener"
     labels:
