@@ -6,7 +6,8 @@ updates:
       interval: daily
     open-pull-requests-limit: 5
     rebase-strategy: "disabled"
-    # ignore:
-    #   - dependency-name: "github.com/gardener/gardener"
+    allow:
+      - dependency-name: "github.com/gardener/gardener"
+        dependency-type: "all"
     labels:
     - kind/enhancement
