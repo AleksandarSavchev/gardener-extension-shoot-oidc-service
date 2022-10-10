@@ -9,7 +9,5 @@ updates:
     rebase-strategy: "disabled"
     allow:
       - dependency-type: "github.com/gardener/gardener"
-    ignore:
-      - dependency-name: "all"
     labels:
     - kind/enhancement
