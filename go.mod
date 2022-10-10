@@ -1,24 +1,24 @@
 module github.com/gardener/gardener-extension-shoot-oidc-service
 
-go 1.18
+go 1.19
 
 require (
 	github.com/Masterminds/semver v1.5.0
-	github.com/ahmetb/gen-crd-api-reference-docs v0.2.0
-	github.com/gardener/gardener v1.54.0
+	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
+	github.com/gardener/gardener v1.57.0
 	github.com/go-logr/logr v1.2.3
-	github.com/onsi/ginkgo/v2 v2.1.4
-	github.com/onsi/gomega v1.20.0
-	github.com/spf13/cobra v1.4.0
+	github.com/onsi/ginkgo/v2 v2.2.0
+	github.com/onsi/gomega v1.21.1
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/tools v0.1.12
-	k8s.io/api v0.24.4
-	k8s.io/apimachinery v0.24.4
+	k8s.io/api v0.25.2
+	k8s.io/apimachinery v0.25.2
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
-	k8s.io/code-generator v0.24.4
-	k8s.io/component-base v0.24.4
-	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
-	sigs.k8s.io/controller-runtime v0.12.1
+	k8s.io/code-generator v0.25.2
+	k8s.io/component-base v0.25.2
+	k8s.io/utils 665eaaec4324
+	sigs.k8s.io/controller-runtime v0.13.0
 )
 
 require (
@@ -139,21 +139,21 @@ require (
 )
 
 replace (
-	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.1 // keep this value in sync with sigs.k8s.io/controller-runtime
-	k8s.io/api => k8s.io/api v0.24.4
-	k8s.io/apimachinery => k8s.io/apimachinery v0.24.4
-	k8s.io/apiserver => k8s.io/apiserver v0.24.4
-	k8s.io/autoscaler => k8s.io/autoscaler v0.0.0-20220531185024-cc90d57b7fe1 // translates to k8s.io/autoscaler/vertical-pod-autoscaler@v0.11.0
-	k8s.io/autoscaler/vertical-pod-autoscaler => k8s.io/autoscaler/vertical-pod-autoscaler v0.11.0
-	k8s.io/client-go => k8s.io/client-go v0.24.4
-	k8s.io/code-generator => k8s.io/code-generator v0.24.4
-	k8s.io/component-base => k8s.io/component-base v0.24.4
-	k8s.io/helm => k8s.io/helm v2.16.1+incompatible
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.12.1
+	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.13.0 // keep this value in sync with sigs.k8s.io/controller-runtime
+	k8s.io/api => k8s.io/api v0.25.2
+	k8s.io/apimachinery => k8s.io/apimachinery v0.25.2
+	k8s.io/apiserver => k8s.io/apiserver v0.25.2
+	k8s.io/autoscaler => k8s.io/autoscaler 4ff4903f6839 // translates to k8s.io/autoscaler/vertical-pod-autoscaler@v0.11.0
+	k8s.io/autoscaler/vertical-pod-autoscaler => k8s.io/autoscaler/vertical-pod-autoscaler v0.12.0
+	k8s.io/client-go => k8s.io/client-go v0.25.2
+	k8s.io/code-generator => k8s.io/code-generator v0.25.2
+	k8s.io/component-base => k8s.io/component-base v0.25.2
+	k8s.io/helm => k8s.io/helm v2.17.0+incompatible
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.13.0
 )
 
 // workaround for https://github.com/gardener/hvpa-controller/issues/92, remove once it's fixed
 replace (
-	github.com/gardener/hvpa-controller => github.com/gardener/hvpa-controller v0.5.0
-	github.com/gardener/hvpa-controller/api => github.com/gardener/hvpa-controller/api v0.5.0
+	github.com/gardener/hvpa-controller => github.com/gardener/hvpa-controller v0.8.0
+	github.com/gardener/hvpa-controller/api => github.com/gardener/hvpa-controller/api v0.8.0
 )
