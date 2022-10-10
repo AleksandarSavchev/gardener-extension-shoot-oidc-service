@@ -8,6 +8,6 @@ updates:
     target-branch: "testing"
     rebase-strategy: "disabled"
     allow:
-      - dependency-type: "github.com/gardener/gardener"
+      - dependency-name: "github.com/gardener/gardener"
     labels:
     - kind/enhancement
