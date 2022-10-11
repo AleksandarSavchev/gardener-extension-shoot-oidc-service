@@ -1,0 +1,13 @@
+dependabot.yml 
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 5
+    rebase-strategy: "disabled"
+    allow:
+      - dependency-name: "github.com/gardener/gardener"
+    labels:
+    - kind/enhancement
