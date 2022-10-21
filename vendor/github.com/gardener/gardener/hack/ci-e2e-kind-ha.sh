@@ -17,25 +17,26 @@
 set -o nounset
 set -o pipefail
 set -o errexit
+set -x
 
 source $(dirname "${0}")/ci-common.sh
 
 clamp_mss_to_pmtu
 
 # test setup
-make kind-up
+make kind-ha-up
 
 # export all container logs and events after test execution
 trap "
-  ( export KUBECONFIG=$PWD/example/gardener-local/kind/kubeconfig; export_logs 'gardener-local';
-    export_events_for_kind 'gardener-local'; export_events_for_shoots )
-  ( make kind-down )
+  ( export_logs 'gardener-local-ha';
+    export_events_for_kind 'gardener-local-ha'; export_events_for_shoots )
+  ( make kind-ha-down )
 " EXIT
 
-make gardener-up
+make KUBECONFIG=$KUBECONFIG gardener-up
 
 # run test
-make test-e2e-local PARALLEL_E2E_TESTS=10
+make KUBECONFIG=$KUBECONFIG test-e2e-local
 
 # test teardown
-make gardener-down
+make KUBECONFIG=$KUBECONFIG gardener-down
