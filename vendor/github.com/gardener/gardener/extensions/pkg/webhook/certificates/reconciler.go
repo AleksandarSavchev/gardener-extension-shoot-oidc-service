@@ -22,24 +22,21 @@ import (
 
 	"github.com/gardener/gardener/extensions/pkg/webhook"
 	extensionswebhookshoot "github.com/gardener/gardener/extensions/pkg/webhook/shoot"
-	"github.com/gardener/gardener/pkg/utils/kubernetes"
+	"github.com/gardener/gardener/pkg/controllerutils"
+	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"
 	secretutils "github.com/gardener/gardener/pkg/utils/secrets"
 	secretsmanager "github.com/gardener/gardener/pkg/utils/secrets/manager"
 
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const certificateReconcilerName = "webhook-certificate"
@@ -122,14 +119,6 @@ func (r *reconciler) AddToManager(ctx context.Context, mgr manager.Manager) erro
 		}
 	}
 
-	// remove legacy webhook cert secret
-	// TODO(timebertt): remove this in a future release
-	if err := kubernetes.DeleteObject(ctx, r.client,
-		&corev1.Secret{ObjectMeta: metav1.ObjectMeta{Namespace: r.Namespace, Name: "gardener-extension-webhook-cert"}},
-	); err != nil {
-		return err
-	}
-
 	// add controller, that regenerates the CA and server cert secrets periodically
 	ctrl, err := controller.New(certificateReconcilerName, mgr, controller.Options{
 		Reconciler:   r,
@@ -141,7 +130,7 @@ func (r *reconciler) AddToManager(ctx context.Context, mgr manager.Manager) erro
 		return err
 	}
 
-	return ctrl.Watch(triggerOnce, nil)
+	return ctrl.Watch(controllerutils.EnqueueOnce, nil)
 }
 
 // Reconcile generates new certificates if needed and updates all webhook configurations.
@@ -220,18 +209,11 @@ func (r *reconciler) reconcileSeedWebhookConfig(ctx context.Context, caBundleSec
 }
 
 func isWebhookServerSecretPresent(ctx context.Context, c client.Reader, secretName, namespace, identity string) (bool, error) {
-	secretList := &metav1.PartialObjectMetadataList{}
-	secretList.SetGroupVersionKind(corev1.SchemeGroupVersion.WithKind("SecretList"))
-
-	if err := c.List(ctx, secretList, client.InNamespace(namespace), client.Limit(1), client.MatchingLabels{
+	return kutil.ResourcesExist(ctx, c, corev1.SchemeGroupVersion.WithKind("SecretList"), client.InNamespace(namespace), client.MatchingLabels{
 		secretsmanager.LabelKeyName:            secretName,
 		secretsmanager.LabelKeyManagedBy:       secretsmanager.LabelValueSecretsManager,
 		secretsmanager.LabelKeyManagerIdentity: identity,
-	}); err != nil {
-		return false, err
-	}
-
-	return len(secretList.Items) > 0, nil
+	})
 }
 
 func (r *reconciler) newSecretsManager(ctx context.Context, log logr.Logger, c client.Client) (secretsmanager.Interface, error) {
@@ -256,9 +238,3 @@ func (r *reconciler) generateWebhookServerCert(ctx context.Context, sm secretsma
 	return sm.Generate(ctx, getWebhookServerCertConfig(r.ServerSecretName, r.Namespace, r.ExtensionName, r.Mode, r.URL),
 		secretsmanager.SignedByCA(r.CASecretName, secretsmanager.UseCurrentCA))
 }
-
-// triggerOnce is a source.Source that simply triggers the reconciler once with an empty reconcile.Request.
-var triggerOnce = source.Func(func(_ context.Context, _ handler.EventHandler, q workqueue.RateLimitingInterface, _ ...predicate.Predicate) error {
-	q.Add(reconcile.Request{})
-	return nil
-})

@@ -337,6 +337,7 @@ type KubernetesDashboard struct {
 
 const (
 	// KubernetesDashboardAuthModeBasic uses basic authentication mode for auth.
+	// Deprecated: basic authentication has been removed in Kubernetes v1.19+.
 	KubernetesDashboardAuthModeBasic = "basic"
 	// KubernetesDashboardAuthModeToken uses token-based mode for auth.
 	KubernetesDashboardAuthModeToken = "token"
@@ -653,6 +654,8 @@ type KubeAPIServerConfig struct {
 	AuditConfig *AuditConfig `json:"auditConfig,omitempty" protobuf:"bytes,4,opt,name=auditConfig"`
 	// EnableBasicAuthentication defines whether basic authentication should be enabled for this cluster or not.
 	// +optional
+	// Defaults to false.
+	// Deprecated: basic authentication has been removed in Kubernetes v1.19+. This field will be removed in a future version.
 	EnableBasicAuthentication *bool `json:"enableBasicAuthentication,omitempty" protobuf:"varint,5,opt,name=enableBasicAuthentication"`
 	// OIDCConfig contains configuration settings for the OIDC provider.
 	// +optional
@@ -1033,6 +1036,29 @@ type KubeletConfig struct {
 	// Default: 10
 	// +optional
 	RegistryBurst *int32 `json:"registryBurst,omitempty" protobuf:"varint,20,opt,name=registryBurst"`
+	// SeccompDefault enables the use of `RuntimeDefault` as the default seccomp profile for all workloads.
+	// This requires the corresponding SeccompDefault feature gate to be enabled as well.
+	// This field is only available for Kubernetes v1.25 or later.
+	// +optional
+	SeccompDefault *bool `json:"seccompDefault,omitempty" protobuf:"varint,21,opt,name=seccompDefault"`
+	// ContainerLogMaxSize defines the maximum size of the container log file before it is rotated. For example: "5Mi" or "256Ki".
+	// Default: 100Mi
+	// +optional
+	ContainerLogMaxSize *resource.Quantity `json:"containerLogMaxSize,omitempty" protobuf:"bytes,22,opt,name=containerLogMaxSize"`
+	// ContainerLogMaxFiles is the maximum number of container log files that can be present for a container.
+	// +optional
+	ContainerLogMaxFiles *int32 `json:"containerLogMaxFiles,omitempty" protobuf:"bytes,23,opt,name=containerLogMaxFiles"`
+	// ProtectKernelDefaults ensures that the kernel tunables are equal to the kubelet defaults.
+	// Defaults to true for Kubernetes v1.26 or later.
+	// +optional
+	ProtectKernelDefaults *bool `json:"protectKernelDefaults,omitempty" protobuf:"varint,24,opt,name=protectKernelDefaults"`
+	// StreamingConnectionIdleTimeout is the maximum time a streaming connection can be idle before the connection is automatically closed.
+	// This field cannot be set lower than "30s" or greater than "4h".
+	// Default:
+	//  "4h" for Kubernetes < v1.26.
+	//  "5m" for Kubernetes >= v1.26.
+	// +optional
+	StreamingConnectionIdleTimeout *metav1.Duration `json:"streamingConnectionIdleTimeout,omitempty" protobuf:"bytes,25,opt,name=streamingConnectionIdleTimeout"`
 }
 
 // KubeletConfigEviction contains kubelet eviction thresholds supporting either a resource.Quantity or a percentage based value.
@@ -1474,6 +1500,10 @@ type NodeLocalDNS struct {
 	// Default, if unspecified, is to enforce TCP.
 	// +optional
 	ForceTCPToUpstreamDNS *bool `json:"forceTCPToUpstreamDNS,omitempty" protobuf:"varint,3,opt,name=forceTCPToUpstreamDNS"`
+	// DisableForwardToUpstreamDNS indicates whether requests from node local DNS to upstream DNS should be disabled.
+	// Default, if unspecified, is to forward requests for external domains to upstream DNS
+	// +optional
+	DisableForwardToUpstreamDNS *bool `json:"disableForwardToUpstreamDNS,omitempty" protobuf:"varint,4,opt,name=disableForwardToUpstreamDNS"`
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
