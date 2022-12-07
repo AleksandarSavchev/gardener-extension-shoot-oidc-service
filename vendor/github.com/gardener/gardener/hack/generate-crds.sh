@@ -19,8 +19,8 @@ set -o nounset
 set -o pipefail
 
 # Usage:
-# generate-seed-crds.sh <file-name-prefix> [<group> ...]
-#     Generate manifests for all CRDs that are present on a Seed cluster to the current working directory.
+# generate-crds.sh <file-name-prefix> [<group> ...]
+#     Generate manifests for all CRDs to the current working directory.
 #     Useful for development purposes.
 #
 #     <file-name-prefix> File name prefix for manifest files (e.g. '10-crd-')
@@ -43,6 +43,9 @@ get_group_package () {
     ;;
   "resources.gardener.cloud")
     echo "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
+    ;;
+  "operator.gardener.cloud")
+    echo "github.com/gardener/gardener/pkg/apis/operator/v1alpha1"
     ;;
   "druid.gardener.cloud")
     echo "github.com/gardener/etcd-druid/api/v1alpha1"
@@ -109,6 +112,7 @@ if [ -n "${2:-}" ]; then
     else
       generate_group extensions.gardener.cloud
       generate_group resources.gardener.cloud
+      generate_group operator.gardener.cloud
       generate_group druid.gardener.cloud
       generate_group autoscaling.k8s.io
     fi
@@ -121,6 +125,7 @@ if [ -n "${2:-}" ]; then
 else
   generate_group extensions.gardener.cloud
   generate_group resources.gardener.cloud
+  generate_group operator.gardener.cloud
   generate_group druid.gardener.cloud
   generate_group autoscaling.k8s.io
 fi
