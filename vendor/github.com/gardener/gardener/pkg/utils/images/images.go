@@ -55,8 +55,6 @@ const (
 	ImageNameFluentBitPluginInstaller = "fluent-bit-plugin-installer"
 	// ImageNameGardenerResourceManager is a constant for an image in the image vector with name 'gardener-resource-manager'.
 	ImageNameGardenerResourceManager = "gardener-resource-manager"
-	// ImageNameGardenerSeedAdmissionController is a constant for an image in the image vector with name 'gardener-seed-admission-controller'.
-	ImageNameGardenerSeedAdmissionController = "gardener-seed-admission-controller"
 	// ImageNameGardenlet is a constant for an image in the image vector with name 'gardenlet'.
 	ImageNameGardenlet = "gardenlet"
 	// ImageNameGrafana is a constant for an image in the image vector with name 'grafana'.
@@ -113,8 +111,6 @@ const (
 	ImageNameTelegraf = "telegraf"
 	// ImageNameVpaAdmissionController is a constant for an image in the image vector with name 'vpa-admission-controller'.
 	ImageNameVpaAdmissionController = "vpa-admission-controller"
-	// ImageNameVpaExporter is a constant for an image in the image vector with name 'vpa-exporter'.
-	ImageNameVpaExporter = "vpa-exporter"
 	// ImageNameVpaRecommender is a constant for an image in the image vector with name 'vpa-recommender'.
 	ImageNameVpaRecommender = "vpa-recommender"
 	// ImageNameVpaUpdater is a constant for an image in the image vector with name 'vpa-updater'.

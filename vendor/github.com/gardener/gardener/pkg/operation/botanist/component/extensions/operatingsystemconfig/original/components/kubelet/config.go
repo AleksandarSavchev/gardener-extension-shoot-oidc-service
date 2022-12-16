@@ -29,7 +29,7 @@ import (
 
 // Config returns a kubelet config based on the provided parameters and for the provided Kubernetes version.
 func Config(kubernetesVersion *semver.Version, clusterDNSAddress, clusterDomain string, params components.ConfigurableKubeletConfigParameters) *kubeletconfigv1beta1.KubeletConfiguration {
-	setConfigDefaults(&params)
+	setConfigDefaults(&params, kubernetesVersion)
 
 	config := &kubeletconfigv1beta1.KubeletConfiguration{
 		Authentication: kubeletconfigv1beta1.KubeletAuthentication{
@@ -56,6 +56,8 @@ func Config(kubernetesVersion *semver.Version, clusterDNSAddress, clusterDomain 
 		CgroupsPerQOS:                    pointer.Bool(true),
 		ClusterDNS:                       []string{clusterDNSAddress},
 		ClusterDomain:                    clusterDomain,
+		ContainerLogMaxSize:              *params.ContainerLogMaxSize,
+		ContainerLogMaxFiles:             params.ContainerLogMaxFiles,
 		CPUCFSQuota:                      params.CpuCFSQuota,
 		CPUManagerPolicy:                 *params.CpuManagerPolicy,
 		CPUManagerReconcilePeriod:        metav1.Duration{Duration: 10 * time.Second},
@@ -87,20 +89,21 @@ func Config(kubernetesVersion *semver.Version, clusterDNSAddress, clusterDomain 
 		NodeStatusUpdateFrequency:        metav1.Duration{Duration: 10 * time.Second},
 		PodsPerCore:                      0,
 		PodPidsLimit:                     params.PodPidsLimit,
+		ProtectKernelDefaults:            *params.ProtectKernelDefaults,
 		ReadOnlyPort:                     0,
 		ResolverConfig:                   pointer.String("/etc/resolv.conf"),
 		RotateCertificates:               true,
 		RuntimeRequestTimeout:            metav1.Duration{Duration: 2 * time.Minute},
+		SeccompDefault:                   params.SeccompDefault,
 		SerializeImagePulls:              params.SerializeImagePulls,
+		ServerTLSBootstrap:               true,
+		StreamingConnectionIdleTimeout:   *params.StreamingConnectionIdleTimeout,
 		RegistryPullQPS:                  params.RegistryPullQPS,
 		RegistryBurst:                    pointer.Int32Deref(params.RegistryBurst, 0),
 		SyncFrequency:                    metav1.Duration{Duration: time.Minute},
 		SystemReserved:                   params.SystemReserved,
 		VolumeStatsAggPeriod:             metav1.Duration{Duration: time.Minute},
-	}
-
-	if !version.ConstraintK8sLess119.Check(kubernetesVersion) {
-		config.VolumePluginDir = pathVolumePluginDirectory
+		VolumePluginDir:                  pathVolumePluginDirectory,
 	}
 
 	return config
@@ -141,7 +144,15 @@ var (
 	}
 )
 
-func setConfigDefaults(c *components.ConfigurableKubeletConfigParameters) {
+// ShouldProtectKernelDefaultsBeEnabled returns true if ProtectKernelDefaults is set to true in the kubelet's config parameters or k8s version is >= 1.26.
+func ShouldProtectKernelDefaultsBeEnabled(kubeletConfigParameters *components.ConfigurableKubeletConfigParameters, kubernetesVersion *semver.Version) bool {
+	if kubeletConfigParameters.ProtectKernelDefaults != nil {
+		return *kubeletConfigParameters.ProtectKernelDefaults
+	}
+	return kubernetesVersion != nil && version.ConstraintK8sGreaterEqual126.Check(kubernetesVersion)
+}
+
+func setConfigDefaults(c *components.ConfigurableKubeletConfigParameters, kubernetesVersion *semver.Version) {
 	if c.CpuCFSQuota == nil {
 		c.CpuCFSQuota = pointer.Bool(true)
 	}
@@ -221,5 +232,20 @@ func setConfigDefaults(c *components.ConfigurableKubeletConfigParameters) {
 
 	if c.MaxPods == nil {
 		c.MaxPods = pointer.Int32(110)
+	}
+
+	if c.ContainerLogMaxSize == nil {
+		c.ContainerLogMaxSize = pointer.String("100Mi")
+	}
+
+	c.ProtectKernelDefaults = pointer.Bool(ShouldProtectKernelDefaultsBeEnabled(c, kubernetesVersion))
+
+	if c.StreamingConnectionIdleTimeout == nil {
+		if version.ConstraintK8sGreaterEqual126.Check(kubernetesVersion) {
+			c.StreamingConnectionIdleTimeout = &metav1.Duration{Duration: time.Minute * 5}
+		} else {
+			// this is also the kubernetes default
+			c.StreamingConnectionIdleTimeout = &metav1.Duration{Duration: time.Hour * 4}
+		}
 	}
 }
