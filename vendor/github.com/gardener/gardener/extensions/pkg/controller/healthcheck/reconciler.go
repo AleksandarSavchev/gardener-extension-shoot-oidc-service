@@ -30,6 +30,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -73,13 +74,16 @@ func (r *reconciler) InjectClient(client client.Client) error {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithTimeout(ctx, r.syncPeriod.Duration/2)
+	log := logf.FromContext(ctx)
+
+	// overall timeout for all calls in this reconciler (including status updates);
+	// this gives status updates a bit of headroom if the actual health checks run into timeouts,
+	// so that we will still update the condition to the failed status
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithTimeout(ctx, 2*r.syncPeriod.Duration)
 	defer cancel()
 
 	extension := r.registeredExtension.getExtensionObjFunc()
-
-	log := logf.FromContext(ctx)
-
 	if err := r.client.Get(ctx, request.NamespacedName, extension); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.V(1).Info("Object was not found, requeueing")
@@ -131,7 +135,11 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) performHealthCheck(ctx context.Context, log logr.Logger, request reconcile.Request, extension extensionsv1alpha1.Object) (reconcile.Result, error) {
-	healthCheckResults, err := r.actuator.ExecuteHealthCheckFunctions(ctx, log, types.NamespacedName{Namespace: request.Namespace, Name: request.Name})
+	// use a dedicated context for the actual health checks so that we can still update the conditions in case of timeouts
+	healthCheckCtx, cancel := context.WithTimeout(ctx, r.syncPeriod.Duration)
+	defer cancel()
+
+	healthCheckResults, err := r.actuator.ExecuteHealthCheckFunctions(healthCheckCtx, log, types.NamespacedName{Namespace: request.Namespace, Name: request.Name})
 	if err != nil {
 		var conditions []condition
 		log.Error(err, "Failed to execute healthChecks, updating each HealthCheckCondition for the extension resource to ConditionCheckError", "kind", r.registeredExtension.groupVersionKind.Kind, "conditionTypes", r.registeredExtension.healthConditionTypes)
@@ -268,13 +276,10 @@ type condition struct {
 
 func (r *reconciler) updateExtensionConditions(ctx context.Context, extension extensionsv1alpha1.Object, conditions ...condition) error {
 	for _, cond := range conditions {
-		now := metav1.Now()
 		if c := gardencorev1beta1helper.GetCondition(extension.GetExtensionStatus().GetConditions(), gardencorev1beta1.ConditionType(cond.healthConditionType)); c != nil {
 			cond.builder.WithOldCondition(*c)
 		}
-		updatedCondition, _ := cond.builder.WithNowFunc(func() metav1.Time { return now }).Build()
-		// always update - the Gardenlet expects a recent health check
-		updatedCondition.LastUpdateTime = now
+		updatedCondition, _ := cond.builder.WithClock(clock.RealClock{}).Build()
 		extension.GetExtensionStatus().SetConditions(gardencorev1beta1helper.MergeConditions(extension.GetExtensionStatus().GetConditions(), updatedCondition))
 	}
 	return r.client.Status().Update(ctx, extension)
