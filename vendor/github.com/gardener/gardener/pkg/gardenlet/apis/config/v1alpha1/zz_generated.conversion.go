@@ -24,9 +24,6 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	core "github.com/gardener/gardener/pkg/apis/core"
-	v1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	config "github.com/gardener/gardener/pkg/gardenlet/apis/config"
 	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +31,10 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	componentbaseconfig "k8s.io/component-base/config"
 	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
+
+	core "github.com/gardener/gardener/pkg/apis/core"
+	v1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	config "github.com/gardener/gardener/pkg/gardenlet/apis/config"
 )
 
 func init() {
@@ -240,16 +241,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*config.GardenletControllerConfiguration)(nil), (*GardenletControllerConfiguration)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_config_GardenletControllerConfiguration_To_v1alpha1_GardenletControllerConfiguration(a.(*config.GardenletControllerConfiguration), b.(*GardenletControllerConfiguration), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*HTTPSServer)(nil), (*config.HTTPSServer)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_HTTPSServer_To_config_HTTPSServer(a.(*HTTPSServer), b.(*config.HTTPSServer), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*config.HTTPSServer)(nil), (*HTTPSServer)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_config_HTTPSServer_To_v1alpha1_HTTPSServer(a.(*config.HTTPSServer), b.(*HTTPSServer), scope)
 	}); err != nil {
 		return err
 	}
@@ -520,16 +511,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*config.StaleExtensionHealthChecks)(nil), (*StaleExtensionHealthChecks)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_config_StaleExtensionHealthChecks_To_v1alpha1_StaleExtensionHealthChecks(a.(*config.StaleExtensionHealthChecks), b.(*StaleExtensionHealthChecks), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*TLSServer)(nil), (*config.TLSServer)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_TLSServer_To_config_TLSServer(a.(*TLSServer), b.(*config.TLSServer), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*config.TLSServer)(nil), (*TLSServer)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_config_TLSServer_To_v1alpha1_TLSServer(a.(*config.TLSServer), b.(*TLSServer), scope)
 	}); err != nil {
 		return err
 	}
@@ -1001,9 +982,11 @@ func autoConvert_v1alpha1_GardenletConfiguration_To_config_GardenletConfiguratio
 	} else {
 		out.LeaderElection = nil
 	}
-	out.LogLevel = (*string)(unsafe.Pointer(in.LogLevel))
-	out.LogFormat = (*string)(unsafe.Pointer(in.LogFormat))
-	out.Server = (*config.ServerConfiguration)(unsafe.Pointer(in.Server))
+	out.LogLevel = in.LogLevel
+	out.LogFormat = in.LogFormat
+	if err := Convert_v1alpha1_ServerConfiguration_To_config_ServerConfiguration(&in.Server, &out.Server, s); err != nil {
+		return err
+	}
 	if in.Debugging != nil {
 		in, out := &in.Debugging, &out.Debugging
 		*out = new(componentbaseconfig.DebuggingConfiguration)
@@ -1075,9 +1058,11 @@ func autoConvert_config_GardenletConfiguration_To_v1alpha1_GardenletConfiguratio
 	} else {
 		out.LeaderElection = nil
 	}
-	out.LogLevel = (*string)(unsafe.Pointer(in.LogLevel))
-	out.LogFormat = (*string)(unsafe.Pointer(in.LogFormat))
-	out.Server = (*ServerConfiguration)(unsafe.Pointer(in.Server))
+	out.LogLevel = in.LogLevel
+	out.LogFormat = in.LogFormat
+	if err := Convert_config_ServerConfiguration_To_v1alpha1_ServerConfiguration(&in.Server, &out.Server, s); err != nil {
+		return err
+	}
 	if in.Debugging != nil {
 		in, out := &in.Debugging, &out.Debugging
 		*out = new(configv1alpha1.DebuggingConfiguration)
@@ -1119,9 +1104,9 @@ func autoConvert_v1alpha1_GardenletControllerConfiguration_To_config_GardenletCo
 	out.ControllerInstallationCare = (*config.ControllerInstallationCareControllerConfiguration)(unsafe.Pointer(in.ControllerInstallationCare))
 	out.ControllerInstallationRequired = (*config.ControllerInstallationRequiredControllerConfiguration)(unsafe.Pointer(in.ControllerInstallationRequired))
 	out.Seed = (*config.SeedControllerConfiguration)(unsafe.Pointer(in.Seed))
+	out.SeedCare = (*config.SeedCareControllerConfiguration)(unsafe.Pointer(in.SeedCare))
 	out.Shoot = (*config.ShootControllerConfiguration)(unsafe.Pointer(in.Shoot))
 	out.ShootCare = (*config.ShootCareControllerConfiguration)(unsafe.Pointer(in.ShootCare))
-	out.SeedCare = (*config.SeedCareControllerConfiguration)(unsafe.Pointer(in.SeedCare))
 	out.ShootMigration = (*config.ShootMigrationControllerConfiguration)(unsafe.Pointer(in.ShootMigration))
 	out.ShootStateSync = (*config.ShootStateSyncControllerConfiguration)(unsafe.Pointer(in.ShootStateSync))
 	out.SeedAPIServerNetworkPolicy = (*config.SeedAPIServerNetworkPolicyControllerConfiguration)(unsafe.Pointer(in.SeedAPIServerNetworkPolicy))
@@ -1144,9 +1129,9 @@ func autoConvert_config_GardenletControllerConfiguration_To_v1alpha1_GardenletCo
 	out.ControllerInstallationCare = (*ControllerInstallationCareControllerConfiguration)(unsafe.Pointer(in.ControllerInstallationCare))
 	out.ControllerInstallationRequired = (*ControllerInstallationRequiredControllerConfiguration)(unsafe.Pointer(in.ControllerInstallationRequired))
 	out.Seed = (*SeedControllerConfiguration)(unsafe.Pointer(in.Seed))
+	out.SeedCare = (*SeedCareControllerConfiguration)(unsafe.Pointer(in.SeedCare))
 	out.Shoot = (*ShootControllerConfiguration)(unsafe.Pointer(in.Shoot))
 	out.ShootCare = (*ShootCareControllerConfiguration)(unsafe.Pointer(in.ShootCare))
-	out.SeedCare = (*SeedCareControllerConfiguration)(unsafe.Pointer(in.SeedCare))
 	out.ShootMigration = (*ShootMigrationControllerConfiguration)(unsafe.Pointer(in.ShootMigration))
 	out.ShootStateSync = (*ShootStateSyncControllerConfiguration)(unsafe.Pointer(in.ShootStateSync))
 	out.SeedAPIServerNetworkPolicy = (*SeedAPIServerNetworkPolicyControllerConfiguration)(unsafe.Pointer(in.SeedAPIServerNetworkPolicy))
@@ -1158,32 +1143,6 @@ func autoConvert_config_GardenletControllerConfiguration_To_v1alpha1_GardenletCo
 // Convert_config_GardenletControllerConfiguration_To_v1alpha1_GardenletControllerConfiguration is an autogenerated conversion function.
 func Convert_config_GardenletControllerConfiguration_To_v1alpha1_GardenletControllerConfiguration(in *config.GardenletControllerConfiguration, out *GardenletControllerConfiguration, s conversion.Scope) error {
 	return autoConvert_config_GardenletControllerConfiguration_To_v1alpha1_GardenletControllerConfiguration(in, out, s)
-}
-
-func autoConvert_v1alpha1_HTTPSServer_To_config_HTTPSServer(in *HTTPSServer, out *config.HTTPSServer, s conversion.Scope) error {
-	if err := Convert_v1alpha1_Server_To_config_Server(&in.Server, &out.Server, s); err != nil {
-		return err
-	}
-	out.TLS = (*config.TLSServer)(unsafe.Pointer(in.TLS))
-	return nil
-}
-
-// Convert_v1alpha1_HTTPSServer_To_config_HTTPSServer is an autogenerated conversion function.
-func Convert_v1alpha1_HTTPSServer_To_config_HTTPSServer(in *HTTPSServer, out *config.HTTPSServer, s conversion.Scope) error {
-	return autoConvert_v1alpha1_HTTPSServer_To_config_HTTPSServer(in, out, s)
-}
-
-func autoConvert_config_HTTPSServer_To_v1alpha1_HTTPSServer(in *config.HTTPSServer, out *HTTPSServer, s conversion.Scope) error {
-	if err := Convert_config_Server_To_v1alpha1_Server(&in.Server, &out.Server, s); err != nil {
-		return err
-	}
-	out.TLS = (*TLSServer)(unsafe.Pointer(in.TLS))
-	return nil
-}
-
-// Convert_config_HTTPSServer_To_v1alpha1_HTTPSServer is an autogenerated conversion function.
-func Convert_config_HTTPSServer_To_v1alpha1_HTTPSServer(in *config.HTTPSServer, out *HTTPSServer, s conversion.Scope) error {
-	return autoConvert_config_HTTPSServer_To_v1alpha1_HTTPSServer(in, out, s)
 }
 
 func autoConvert_v1alpha1_KubeconfigValidity_To_config_KubeconfigValidity(in *KubeconfigValidity, out *config.KubeconfigValidity, s conversion.Scope) error {
@@ -1511,7 +1470,6 @@ func Convert_config_SeedConfig_To_v1alpha1_SeedConfig(in *config.SeedConfig, out
 }
 
 func autoConvert_v1alpha1_SeedControllerConfiguration_To_config_SeedControllerConfiguration(in *SeedControllerConfiguration, out *config.SeedControllerConfiguration, s conversion.Scope) error {
-	out.ConcurrentSyncs = (*int)(unsafe.Pointer(in.ConcurrentSyncs))
 	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
 	out.LeaseResyncSeconds = (*int32)(unsafe.Pointer(in.LeaseResyncSeconds))
 	out.LeaseResyncMissThreshold = (*int32)(unsafe.Pointer(in.LeaseResyncMissThreshold))
@@ -1524,7 +1482,6 @@ func Convert_v1alpha1_SeedControllerConfiguration_To_config_SeedControllerConfig
 }
 
 func autoConvert_config_SeedControllerConfiguration_To_v1alpha1_SeedControllerConfiguration(in *config.SeedControllerConfiguration, out *SeedControllerConfiguration, s conversion.Scope) error {
-	out.ConcurrentSyncs = (*int)(unsafe.Pointer(in.ConcurrentSyncs))
 	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
 	out.LeaseResyncSeconds = (*int32)(unsafe.Pointer(in.LeaseResyncSeconds))
 	out.LeaseResyncMissThreshold = (*int32)(unsafe.Pointer(in.LeaseResyncMissThreshold))
@@ -1559,9 +1516,8 @@ func Convert_config_Server_To_v1alpha1_Server(in *config.Server, out *Server, s 
 }
 
 func autoConvert_v1alpha1_ServerConfiguration_To_config_ServerConfiguration(in *ServerConfiguration, out *config.ServerConfiguration, s conversion.Scope) error {
-	if err := Convert_v1alpha1_HTTPSServer_To_config_HTTPSServer(&in.HTTPS, &out.HTTPS, s); err != nil {
-		return err
-	}
+	out.HealthProbes = (*config.Server)(unsafe.Pointer(in.HealthProbes))
+	out.Metrics = (*config.Server)(unsafe.Pointer(in.Metrics))
 	return nil
 }
 
@@ -1571,9 +1527,8 @@ func Convert_v1alpha1_ServerConfiguration_To_config_ServerConfiguration(in *Serv
 }
 
 func autoConvert_config_ServerConfiguration_To_v1alpha1_ServerConfiguration(in *config.ServerConfiguration, out *ServerConfiguration, s conversion.Scope) error {
-	if err := Convert_config_HTTPSServer_To_v1alpha1_HTTPSServer(&in.HTTPS, &out.HTTPS, s); err != nil {
-		return err
-	}
+	out.HealthProbes = (*Server)(unsafe.Pointer(in.HealthProbes))
+	out.Metrics = (*Server)(unsafe.Pointer(in.Metrics))
 	return nil
 }
 
@@ -1586,6 +1541,7 @@ func autoConvert_v1alpha1_ShootCareControllerConfiguration_To_config_ShootCareCo
 	out.ConcurrentSyncs = (*int)(unsafe.Pointer(in.ConcurrentSyncs))
 	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
 	out.StaleExtensionHealthChecks = (*config.StaleExtensionHealthChecks)(unsafe.Pointer(in.StaleExtensionHealthChecks))
+	out.ManagedResourceProgressingThreshold = (*v1.Duration)(unsafe.Pointer(in.ManagedResourceProgressingThreshold))
 	out.ConditionThresholds = *(*[]config.ConditionThreshold)(unsafe.Pointer(&in.ConditionThresholds))
 	out.WebhookRemediatorEnabled = (*bool)(unsafe.Pointer(in.WebhookRemediatorEnabled))
 	return nil
@@ -1600,6 +1556,7 @@ func autoConvert_config_ShootCareControllerConfiguration_To_v1alpha1_ShootCareCo
 	out.ConcurrentSyncs = (*int)(unsafe.Pointer(in.ConcurrentSyncs))
 	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
 	out.StaleExtensionHealthChecks = (*StaleExtensionHealthChecks)(unsafe.Pointer(in.StaleExtensionHealthChecks))
+	out.ManagedResourceProgressingThreshold = (*v1.Duration)(unsafe.Pointer(in.ManagedResourceProgressingThreshold))
 	out.ConditionThresholds = *(*[]ConditionThreshold)(unsafe.Pointer(&in.ConditionThresholds))
 	out.WebhookRemediatorEnabled = (*bool)(unsafe.Pointer(in.WebhookRemediatorEnabled))
 	return nil
@@ -1778,7 +1735,6 @@ func Convert_config_ShootSecretControllerConfiguration_To_v1alpha1_ShootSecretCo
 
 func autoConvert_v1alpha1_ShootStateSyncControllerConfiguration_To_config_ShootStateSyncControllerConfiguration(in *ShootStateSyncControllerConfiguration, out *config.ShootStateSyncControllerConfiguration, s conversion.Scope) error {
 	out.ConcurrentSyncs = (*int)(unsafe.Pointer(in.ConcurrentSyncs))
-	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
 	return nil
 }
 
@@ -1789,7 +1745,6 @@ func Convert_v1alpha1_ShootStateSyncControllerConfiguration_To_config_ShootState
 
 func autoConvert_config_ShootStateSyncControllerConfiguration_To_v1alpha1_ShootStateSyncControllerConfiguration(in *config.ShootStateSyncControllerConfiguration, out *ShootStateSyncControllerConfiguration, s conversion.Scope) error {
 	out.ConcurrentSyncs = (*int)(unsafe.Pointer(in.ConcurrentSyncs))
-	out.SyncPeriod = (*v1.Duration)(unsafe.Pointer(in.SyncPeriod))
 	return nil
 }
 
@@ -1818,26 +1773,4 @@ func autoConvert_config_StaleExtensionHealthChecks_To_v1alpha1_StaleExtensionHea
 // Convert_config_StaleExtensionHealthChecks_To_v1alpha1_StaleExtensionHealthChecks is an autogenerated conversion function.
 func Convert_config_StaleExtensionHealthChecks_To_v1alpha1_StaleExtensionHealthChecks(in *config.StaleExtensionHealthChecks, out *StaleExtensionHealthChecks, s conversion.Scope) error {
 	return autoConvert_config_StaleExtensionHealthChecks_To_v1alpha1_StaleExtensionHealthChecks(in, out, s)
-}
-
-func autoConvert_v1alpha1_TLSServer_To_config_TLSServer(in *TLSServer, out *config.TLSServer, s conversion.Scope) error {
-	out.ServerCertPath = in.ServerCertPath
-	out.ServerKeyPath = in.ServerKeyPath
-	return nil
-}
-
-// Convert_v1alpha1_TLSServer_To_config_TLSServer is an autogenerated conversion function.
-func Convert_v1alpha1_TLSServer_To_config_TLSServer(in *TLSServer, out *config.TLSServer, s conversion.Scope) error {
-	return autoConvert_v1alpha1_TLSServer_To_config_TLSServer(in, out, s)
-}
-
-func autoConvert_config_TLSServer_To_v1alpha1_TLSServer(in *config.TLSServer, out *TLSServer, s conversion.Scope) error {
-	out.ServerCertPath = in.ServerCertPath
-	out.ServerKeyPath = in.ServerKeyPath
-	return nil
-}
-
-// Convert_config_TLSServer_To_v1alpha1_TLSServer is an autogenerated conversion function.
-func Convert_config_TLSServer_To_v1alpha1_TLSServer(in *config.TLSServer, out *TLSServer, s conversion.Scope) error {
-	return autoConvert_config_TLSServer_To_v1alpha1_TLSServer(in, out, s)
 }

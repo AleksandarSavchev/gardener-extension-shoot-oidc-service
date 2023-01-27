@@ -20,11 +20,11 @@ import (
 	"strings"
 	"time"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	utilerrors "github.com/gardener/gardener/pkg/utils/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	errorsutils "github.com/gardener/gardener/pkg/utils/errors"
 )
 
 // ErrorWithCodes contains the error and Gardener error codes.
@@ -140,10 +140,10 @@ type Coder interface {
 	Codes() []gardencorev1beta1.ErrorCode
 }
 
-// ExtractErrorCodes extracts all error codes from the given error by using utilerrors.Errors
+// ExtractErrorCodes extracts all error codes from the given error by using errorsutils.Errors
 func ExtractErrorCodes(err error) []gardencorev1beta1.ErrorCode {
 	var codes []gardencorev1beta1.ErrorCode
-	for _, err := range utilerrors.Errors(err) {
+	for _, err := range errorsutils.Errors(err) {
 		var coder Coder
 		if errors.As(err, &coder) {
 			codes = append(codes, coder.Codes()...)
@@ -223,15 +223,32 @@ type WrappedLastErrors struct {
 	LastErrors  []gardencorev1beta1.LastError
 }
 
-// NewWrappedLastErrors returns an error
+// DeprecatedNewWrappedLastErrors returns a list of last errors.
+func DeprecatedNewWrappedLastErrors(description string, err error) *WrappedLastErrors {
+	var lastErrors []gardencorev1beta1.LastError
+
+	for _, partError := range errorsutils.Errors(err) {
+		lastErrors = append(lastErrors, *LastErrorWithTaskID(
+			partError.Error(),
+			errorsutils.GetID(partError),
+			DeprecatedDetermineErrorCodes(partError)...))
+	}
+
+	return &WrappedLastErrors{
+		Description: description,
+		LastErrors:  lastErrors,
+	}
+}
+
+// NewWrappedLastErrors returns a list of last errors.
 func NewWrappedLastErrors(description string, err error) *WrappedLastErrors {
 	var lastErrors []gardencorev1beta1.LastError
 
-	for _, partError := range utilerrors.Errors(err) {
+	for _, partError := range errorsutils.Errors(err) {
 		lastErrors = append(lastErrors, *LastErrorWithTaskID(
 			partError.Error(),
-			utilerrors.GetID(partError),
-			DeprecatedDetermineErrorCodes(partError)...))
+			errorsutils.GetID(partError),
+			ExtractErrorCodes(partError)...))
 	}
 
 	return &WrappedLastErrors{
