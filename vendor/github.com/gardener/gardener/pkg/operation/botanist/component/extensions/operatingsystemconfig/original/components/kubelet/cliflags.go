@@ -18,15 +18,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Masterminds/semver"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/gardener/gardener/pkg/operation/botanist/component/extensions/operatingsystemconfig/original/components"
 	"github.com/gardener/gardener/pkg/operation/botanist/component/extensions/operatingsystemconfig/original/components/containerd"
 	"github.com/gardener/gardener/pkg/utils/imagevector"
-	"github.com/gardener/gardener/pkg/utils/version"
-
-	"github.com/Masterminds/semver"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CLIFlags returns a list of kubelet CLI flags based on the provided parameters and for the provided Kubernetes version.
@@ -41,10 +40,6 @@ func CLIFlags(kubernetesVersion *semver.Version, criName extensionsv1alpha1.CRIN
 		"--kubeconfig="+PathKubeconfigReal,
 		fmt.Sprintf("--node-labels=%s=%s", v1beta1constants.LabelWorkerKubernetesVersion, kubernetesVersion.String()),
 	)
-
-	if version.ConstraintK8sLess119.Check(kubernetesVersion) {
-		flags = append(flags, "--volume-plugin-dir="+pathVolumePluginDirectory)
-	}
 
 	if criName == extensionsv1alpha1.CRINameContainerD {
 		flags = append(flags,
