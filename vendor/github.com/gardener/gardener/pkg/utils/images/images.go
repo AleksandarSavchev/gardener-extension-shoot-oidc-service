@@ -23,8 +23,6 @@ const (
 	ImageNameAlertmanager = "alertmanager"
 	// ImageNameAlpine is a constant for an image in the image vector with name 'alpine'.
 	ImageNameAlpine = "alpine"
-	// ImageNameAlpineIptables is a constant for an image in the image vector with name 'alpine-iptables'.
-	ImageNameAlpineIptables = "alpine-iptables"
 	// ImageNameApiserverProxy is a constant for an image in the image vector with name 'apiserver-proxy'.
 	ImageNameApiserverProxy = "apiserver-proxy"
 	// ImageNameApiserverProxyPodWebhook is a constant for an image in the image vector with name 'apiserver-proxy-pod-webhook'.
@@ -55,8 +53,6 @@ const (
 	ImageNameFluentBitPluginInstaller = "fluent-bit-plugin-installer"
 	// ImageNameGardenerResourceManager is a constant for an image in the image vector with name 'gardener-resource-manager'.
 	ImageNameGardenerResourceManager = "gardener-resource-manager"
-	// ImageNameGardenerSeedAdmissionController is a constant for an image in the image vector with name 'gardener-seed-admission-controller'.
-	ImageNameGardenerSeedAdmissionController = "gardener-seed-admission-controller"
 	// ImageNameGardenlet is a constant for an image in the image vector with name 'gardenlet'.
 	ImageNameGardenlet = "gardenlet"
 	// ImageNameGrafana is a constant for an image in the image vector with name 'grafana'.
@@ -113,18 +109,12 @@ const (
 	ImageNameTelegraf = "telegraf"
 	// ImageNameVpaAdmissionController is a constant for an image in the image vector with name 'vpa-admission-controller'.
 	ImageNameVpaAdmissionController = "vpa-admission-controller"
-	// ImageNameVpaExporter is a constant for an image in the image vector with name 'vpa-exporter'.
-	ImageNameVpaExporter = "vpa-exporter"
 	// ImageNameVpaRecommender is a constant for an image in the image vector with name 'vpa-recommender'.
 	ImageNameVpaRecommender = "vpa-recommender"
 	// ImageNameVpaUpdater is a constant for an image in the image vector with name 'vpa-updater'.
 	ImageNameVpaUpdater = "vpa-updater"
-	// ImageNameVpnSeed is a constant for an image in the image vector with name 'vpn-seed'.
-	ImageNameVpnSeed = "vpn-seed"
 	// ImageNameVpnSeedServer is a constant for an image in the image vector with name 'vpn-seed-server'.
 	ImageNameVpnSeedServer = "vpn-seed-server"
-	// ImageNameVpnShoot is a constant for an image in the image vector with name 'vpn-shoot'.
-	ImageNameVpnShoot = "vpn-shoot"
 	// ImageNameVpnShootClient is a constant for an image in the image vector with name 'vpn-shoot-client'.
 	ImageNameVpnShootClient = "vpn-shoot-client"
 )
