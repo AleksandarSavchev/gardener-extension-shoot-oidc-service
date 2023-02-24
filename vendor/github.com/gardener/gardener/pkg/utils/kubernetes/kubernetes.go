@@ -16,17 +16,14 @@ package kubernetes
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	"github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
-	"github.com/gardener/gardener/pkg/client/kubernetes"
-	"github.com/gardener/gardener/pkg/utils/retry"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -39,10 +36,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/gardener/gardener/pkg/client/kubernetes"
+	"github.com/gardener/gardener/pkg/utils/retry"
 )
 
 // TruncateLabelValue truncates a string at 63 characters so it's suitable for a label value.
@@ -680,40 +682,67 @@ func ObjectKeyForCreateWebhooks(obj client.Object, req admission.Request) client
 	return client.ObjectKey{Namespace: namespace, Name: name}
 }
 
-// GetTopologySpreadConstraints returns the required topology spread constraints based
-// on the passed `failureToleranceType`.
-func GetTopologySpreadConstraints(failureToleranceType *gardencorev1beta1.FailureToleranceType, maxReplicas int32, labelSelector metav1.LabelSelector) []corev1.TopologySpreadConstraint {
-	const criticalMaxReplicaCount = 6
-
-	whenUnsatisfiable := corev1.DoNotSchedule
-	if failureToleranceType == nil {
-		// Spread should be a best-effort only if no HA is configured.
-		whenUnsatisfiable = corev1.ScheduleAnyway
+// ClientCertificateFromRESTConfig returns the client certificate used inside a REST config.
+func ClientCertificateFromRESTConfig(restConfig *rest.Config) (*tls.Certificate, error) {
+	cert, err := tls.X509KeyPair(restConfig.CertData, restConfig.KeyData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse X509 certificate: %w", err)
 	}
 
-	constraints := []corev1.TopologySpreadConstraint{
-		{
-			TopologyKey:       corev1.LabelHostname,
-			MaxSkew:           1,
-			WhenUnsatisfiable: whenUnsatisfiable,
-			LabelSelector:     &labelSelector,
-		},
+	if len(cert.Certificate) < 1 {
+		return nil, fmt.Errorf("the X509 certificate is invalid, no cert/key data found")
 	}
 
-	if helper.IsFailureToleranceTypeZone(failureToleranceType) {
-		maxSkew := int32(1)
-		// Increase maxSkew if there can be >= 6 replicas, see https://github.com/kubernetes/kubernetes/issues/109364.
-		if maxReplicas >= criticalMaxReplicaCount {
-			maxSkew = 2
-		}
-
-		constraints = append(constraints, corev1.TopologySpreadConstraint{
-			TopologyKey:       corev1.LabelTopologyZone,
-			MaxSkew:           maxSkew,
-			WhenUnsatisfiable: corev1.DoNotSchedule,
-			LabelSelector:     &labelSelector,
-		})
+	certs, err := x509.ParseCertificates(cert.Certificate[0])
+	if err != nil {
+		return nil, fmt.Errorf("the X509 certificate bundle cannot be parsed: %w", err)
 	}
 
-	return constraints
+	if len(certs) < 1 {
+		return nil, fmt.Errorf("the X509 certificate bundle does not contain exactly one certificate")
+	}
+
+	cert.Leaf = certs[0]
+	return &cert, nil
+}
+
+// TolerationForTaint returns the corresponding toleration for the given taint.
+func TolerationForTaint(taint corev1.Taint) corev1.Toleration {
+	operator := corev1.TolerationOpEqual
+	if taint.Value == "" {
+		operator = corev1.TolerationOpExists
+	}
+
+	return corev1.Toleration{
+		Key:      taint.Key,
+		Operator: operator,
+		Value:    taint.Value,
+		Effect:   taint.Effect,
+	}
+}
+
+// ComparableTolerations contains information to transform an ordinary 'corev1.Toleration' object to a semantically
+// comparable object that is fully compatible with the 'comparable' Golang interface, see https://github.com/golang/go/blob/de6abd78893e91f26337eb399644b7a6bc3ea583/src/builtin/builtin.go#L102.
+type ComparableTolerations struct {
+	tolerationSeconds map[int64]*int64
+}
+
+// Transform takes a toleration object and exchanges the 'TolerationSeconds' pointer if set. The int64 value will
+// be the same but pointers will be **reused** for all passed tolerations that have the same underlying toleration seconds value.
+func (c *ComparableTolerations) Transform(toleration corev1.Toleration) corev1.Toleration {
+	if toleration.TolerationSeconds == nil {
+		return toleration
+	}
+
+	if c.tolerationSeconds == nil {
+		c.tolerationSeconds = make(map[int64]*int64)
+	}
+
+	tolerationSeconds := *toleration.TolerationSeconds
+	if _, ok := c.tolerationSeconds[tolerationSeconds]; !ok {
+		c.tolerationSeconds[tolerationSeconds] = pointer.Int64(tolerationSeconds)
+	}
+
+	toleration.TolerationSeconds = c.tolerationSeconds[tolerationSeconds]
+	return toleration
 }

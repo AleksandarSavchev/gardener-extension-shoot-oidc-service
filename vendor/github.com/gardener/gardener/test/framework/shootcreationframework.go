@@ -22,11 +22,12 @@ import (
 	"strconv"
 	"time"
 
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	v1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 )
 
 var shootCreationCfg *ShootCreationConfig
@@ -439,6 +440,11 @@ func (f *ShootCreationFramework) Verify() {
 		expectedTechnicalID           = fmt.Sprintf("shoot--%s--%s", f.ShootFramework.Project.Name, f.Shoot.Name)
 		expectedClusterIdentityPrefix = fmt.Sprintf("%s-%s", f.Shoot.Status.TechnicalID, f.Shoot.Status.UID)
 	)
+
+	// Shoot with failure tolerance 'zone' should only be scheduled on seed with at least 3 zones.
+	if v1beta1helper.IsMultiZonalShootControlPlane(f.Shoot) {
+		gomega.Expect(len(f.ShootFramework.Seed.Spec.Provider.Zones)).Should(gomega.BeNumerically(">=", 3))
+	}
 
 	gomega.Expect(f.Shoot.Status.Gardener.ID).NotTo(gomega.BeEmpty())
 	gomega.Expect(f.Shoot.Status.Gardener.Name).NotTo(gomega.BeEmpty())
